@@ -13,7 +13,7 @@ Sound effects for eating, game over, and button clicks.
 Leaderboard: tracks your best score locally using localStorage.
 Demo
 
-Try the game live here: 
+Try the game live here: https://vuyo111.github.io/Snake-game/
 
 Features
 
