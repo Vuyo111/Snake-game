@@ -19,17 +19,22 @@
       <div class="buttons">
         <button id="soloBtn">Solo Mode</button>
         <button id="duelBtn">Duel Mode</button>
-        <button id="restartBtn">Restart</button>
       </div>
     </div>
   </div>
 
-  <!-- Sound Effects -->
-  <audio id="eatSound" src="assets/eat.mp3"></audio>
-  <audio id="gameOverSound" src="assets/gameover.mp3"></audio>
-  <audio id="clickSound" src="assets/click.mp3"></audio>
+  <div id="gameOverOverlay" class="overlay">
+    <div class="overlay-content">
+      <h2>Game Over</h2>
+      <p>Your Score: <span id="finalScore"></span></p>
+      <button id="restartBtn">Restart</button>
+    </div>
+  </div>
+
+  <audio id="eatSound" src="audio/RPReplay_Final1753760137.mp3"></audio>
+  <audio id="gameOverSound" src="audio/RPReplay_Final1753760277.mp3"></audio>
+  <audio id="clickSound" src="audio/RPReplay_Final1753760308.mp3"></audio>
 
   <script src="script.js"></script>
 </body>
 </html>
-

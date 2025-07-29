@@ -6,28 +6,32 @@ const difficultyDisplay = document.getElementById('difficulty');
 const soloBtn = document.getElementById('soloBtn');
 const duelBtn = document.getElementById('duelBtn');
 const restartBtn = document.getElementById('restartBtn');
+const overlay = document.getElementById('gameOverOverlay');
+const finalScoreDisplay = document.getElementById('finalScore');
 
 const eatSound = document.getElementById('eatSound');
 const gameOverSound = document.getElementById('gameOverSound');
 const clickSound = document.getElementById('clickSound');
 
 const box = 20;
-let snake, aiSnake, direction, aiDirection, food, score, speed, gameMode;
-let lastTime = 0;
+let snake, aiSnake, direction, aiDirection, food, score, speed, gameMode, animationId;
 let bestScore = localStorage.getItem('bestScore') || 0;
 bestScoreDisplay.textContent = bestScore;
 
+let lastTime = 0;
+
 // Touch controls
-let touchStartX = 0;
-let touchStartY = 0;
+let touchStartX = 0, touchStartY = 0;
 
 canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
-});
+}, { passive: false });
 
 canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
   const touch = e.touches[0];
   const dx = touch.clientX - touchStartX;
   const dy = touch.clientY - touchStartY;
@@ -39,27 +43,41 @@ canvas.addEventListener('touchmove', e => {
     if (dy > 0 && direction !== 'UP') direction = 'DOWN';
     else if (dy < 0 && direction !== 'DOWN') direction = 'UP';
   }
+}, { passive: false });
+
+// Mouse click control
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+
+  if (clickX > clickY && clickX + clickY < canvas.width) direction = 'UP';
+  else if (clickX > clickY && clickX + clickY > canvas.width) direction = 'RIGHT';
+  else if (clickX < clickY && clickX + clickY > canvas.width) direction = 'DOWN';
+  else direction = 'LEFT';
 });
 
 soloBtn.addEventListener('click', () => { clickSound.play(); startGame('solo'); });
 duelBtn.addEventListener('click', () => { clickSound.play(); startGame('duel'); });
-restartBtn.addEventListener('click', () => { clickSound.play(); startGame(gameMode); });
+restartBtn.addEventListener('click', () => { clickSound.play(); overlay.style.display = 'none'; startGame(gameMode); });
 
 document.addEventListener('keydown', setDirection);
 
 function startGame(mode) {
+  cancelAnimationFrame(animationId); // stop any old loop
   gameMode = mode;
   snake = [{ x: 9 * box, y: 10 * box }];
   aiSnake = [{ x: 10 * box, y: 9 * box }];
   direction = null;
   aiDirection = 'LEFT';
   score = 0;
-  speed = 150; // base speed
+  speed = 150;
   lastTime = 0;
   scoreDisplay.textContent = score;
   difficultyDisplay.textContent = 'Easy';
   food = randomFood();
-  requestAnimationFrame(gameLoop);
+  overlay.style.display = 'none';
+  animationId = requestAnimationFrame(gameLoop);
 }
 
 function setDirection(e) {
@@ -86,11 +104,10 @@ function gameLoop(timestamp) {
   }
 
   draw();
-  requestAnimationFrame(gameLoop);
+  animationId = requestAnimationFrame(gameLoop);
 }
 
 function update() {
-  // Speed & difficulty scaling
   if (score >= 10) { speed = 90; difficultyDisplay.textContent = 'Hard'; }
   else if (score >= 5) { speed = 120; difficultyDisplay.textContent = 'Medium'; }
 
@@ -120,8 +137,7 @@ function update() {
 
   if (checkCollision(newHead, snake) || checkCollision(newHead, aiSnake) ||
       snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height) {
-    gameOverSound.play();
-    alert('Game Over! Score: ' + score);
+    gameOver();
     return;
   }
 
@@ -163,12 +179,6 @@ function smartAIMove() {
   else if (aiY < food.y) aiDirection = 'DOWN';
   else if (aiY > food.y) aiDirection = 'UP';
 
-  // Avoid wall collisions
-  if (aiDirection === 'LEFT' && aiX <= 0) aiDirection = 'UP';
-  if (aiDirection === 'RIGHT' && aiX >= canvas.width - box) aiDirection = 'DOWN';
-  if (aiDirection === 'UP' && aiY <= 0) aiDirection = 'RIGHT';
-  if (aiDirection === 'DOWN' && aiY >= canvas.height - box) aiDirection = 'LEFT';
-
   if (aiDirection === 'LEFT') aiX -= box;
   if (aiDirection === 'UP') aiY -= box;
   if (aiDirection === 'RIGHT') aiX += box;
@@ -185,4 +195,11 @@ function smartAIMove() {
 
 function checkCollision(head, array) {
   return array.some(segment => segment.x === head.x && segment.y === head.y);
+}
+
+function gameOver() {
+  cancelAnimationFrame(animationId);
+  gameOverSound.play();
+  finalScoreDisplay.textContent = score;
+  overlay.style.display = 'flex';
 }
