@@ -1,170 +1,204 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-const box = 20;
-let snake, food, aiSnake, score, direction, game, mode;
-let highScore = localStorage.getItem("snakeHighScore") || 0;
-let speed = 150;
 
-document.getElementById("high-score").textContent = `High Score: ${highScore}`;
-const overlay = document.getElementById("game-over-overlay");
-const finalScoreDisplay = document.getElementById("final-score");
+const gridSize = 20;
+const tileCount = canvas.width / gridSize;
+
+let snake = [{ x: 10, y: 10 }];
+let aiSnake = [{ x: 5, y: 5 }];
+let food = { x: 15, y: 15 };
+let velocity = { x: 0, y: 0 };
+let aiVelocity = { x: 1, y: 0 };
+let score = 0;
+let gameInterval = null;
+let mode = "solo";
+
 const eatSound = document.getElementById("eatSound");
-const gameOverSound= document.getElementById("gameOverSound");
+const gameOverSound = document.getElementById("gameOverSound");
 const clickSound = document.getElementById("clickSound");
 
-function setMode(selectedMode) {
-  mode = selectedMode;
-  document.getElementById("start-button").style.display = "inline-block";
-}
+document.getElementById("soloBtn").onclick = () => {
+  clickSound.play();
+  mode = "solo";
+  resetGame();
+};
 
-function startGame() {
-  snake = [{ x: 9 * box, y: 10 * box }];
-  aiSnake = [{ x: 1 * box, y: 1 * box }];
-  food = spawnFood();
+document.getElementById("duelBtn").onclick = () => {
+  clickSound.play();
+  mode = "duel";
+  resetGame();
+};
+
+document.getElementById("restartBtn").onclick = () => {
+  document.getElementById("gameOverScreen").classList.add("hidden");
+  clickSound.play();
+  resetGame();
+};
+
+document.getElementById("muteBtn").onclick = () => {
+  const muted = eatSound.muted = gameOverSound.muted = clickSound.muted = !eatSound.muted;
+  document.getElementById("muteBtn").textContent = muted ? "🔇" : "🔊";
+};
+
+function resetGame() {
+  snake = [{ x: 10, y: 10 }];
+  aiSnake = [{ x: 5, y: 5 }];
+  food = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+  velocity = { x: 0, y: 0 };
+  aiVelocity = { x: 1, y: 0 };
   score = 0;
-  direction = "RIGHT";
-  speed = 150;
-  clearInterval(game);
-  game = setInterval(draw, speed);
-  overlay.classList.add("hidden");
+  clearInterval(gameInterval);
+  gameInterval = setInterval(gameLoop, 150);
 }
 
-function restartGame() {
-  overlay.classList.add("hidden");
-  startGame();
-}
+function gameLoop() {
+  const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+  const aiHead = { x: aiSnake[0].x + aiVelocity.x, y: aiSnake[0].y + aiVelocity.y };
 
-function spawnFood() {
-  return {
-    x: Math.floor(Math.random() * 19 + 1) * box,
-    y: Math.floor(Math.random() * 19 + 1) * box
-  };
-}
+  // Wall collisions
+  if (
+    head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount ||
+    aiHead.x < 0 || aiHead.x >= tileCount || aiHead.y < 0 || aiHead.y >= tileCount
+  ) {
+    return endGame();
+  }
 
-function drawBox(x, y, color) {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, box, box);
-  ctx.strokeStyle = "#fff";
-  ctx.strokeRect(x, y, box, box);
-}
+  // Self and player collision
+  if (
+    snake.some((segment, idx) => idx > 0 && segment.x === head.x && segment.y === head.y) ||
+    aiSnake.some((segment, idx) => idx > 0 && segment.x === aiHead.x && segment.y === aiHead.y) ||
+    snake.some(seg => seg.x === aiHead.x && seg.y === aiHead.y) ||
+    aiSnake.some(seg => seg.x === head.x && seg.y === head.y)
+  ) {
+    return endGame();
+  }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  snake.unshift(head);
+  aiSnake.unshift(aiHead);
 
-  snake.forEach(part => drawBox(part.x, part.y, "#6bbe92"));
-  if (mode === "duel") aiSnake.forEach(part => drawBox(part.x, part.y, "#e46464"));
-  drawBox(food.x, food.y, "#ffd700");
-
-  moveSnake(snake);
-  if (mode === "duel") moveAI();
-
-  document.getElementById("score-display").textContent = `Score: ${score}`;
-
-  speed = 150 - Math.min(score * 5, 100);
-  clearInterval(game);
-  game = setInterval(draw, speed);
-}
-
-function moveSnake(s) {
-  let head = { ...s[0] };
-  if (direction === "LEFT") head.x -= box;
-  if (direction === "UP") head.y -= box;
-  if (direction === "RIGHT") head.x += box;
-  if (direction === "DOWN") head.y += box;
-
+  // Food collision
   if (head.x === food.x && head.y === food.y) {
     score++;
-    food = spawnFood();
+    eatSound.currentTime = 0;
+    eatSound.play();
+    food = {
+      x: Math.floor(Math.random() * tileCount),
+      y: Math.floor(Math.random() * tileCount)
+    };
   } else {
-    s.pop();
+    snake.pop();
   }
 
-  if (
-    head.x < 0 || head.x >= canvas.width ||
-    head.y < 0 || head.y >= canvas.height ||
-    collision(head, s) ||
-    (mode === "duel" && collision(head, aiSnake))
-  ) return gameOver();
-
-  s.unshift(head);
-}
-
-function moveAI() {
-  let head = { ...aiSnake[0] };
-
-  if (food.x > head.x) head.x += box;
-  else if (food.x < head.x) head.x -= box;
-  else if (food.y > head.y) head.y += box;
-  else if (food.y < head.y) head.y -= box;
-
-  if (head.x === food.x && head.y === food.y) {
-    food = spawnFood();
-  } else {
-    aiSnake.pop();
+  if (mode === "duel") {
+    if (aiHead.x === food.x && aiHead.y === food.y) {
+      food = {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount)
+      };
+    } else {
+      aiSnake.pop();
+    }
+    aiVelocity = getAIMove(aiSnake[0]);
   }
 
-  if (
-    head.x < 0 || head.x >= canvas.width ||
-    head.y < 0 || head.y >= canvas.height ||
-    collision(head, aiSnake) ||
-    collision(head, snake)
-  ) return; // AI dies silently
+  // Clear & Draw
+  ctx.fillStyle = "#1f3b28";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  aiSnake.unshift(head);
+  // Food
+  ctx.fillStyle = "#e63946";
+  ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+
+  // Snake
+  ctx.fillStyle = "#a8dadc";
+  snake.forEach(segment => {
+    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+  });
+
+  // AI Snake
+  if (mode === "duel") {
+    ctx.fillStyle = "#f1fa8c";
+    aiSnake.forEach(segment => {
+      ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+    });
+  }
 }
 
-function collision(head, array) {
-  return array.some(part => part.x === head.x && part.y === head.y);
+function endGame() {
+  clearInterval(gameInterval);
+  gameOverSound.currentTime = 0;
+  gameOverSound.play();
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("gameOverScreen").classList.remove("hidden");
 }
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-  else if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-  else if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
-  else if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-});
+function getAIMove(aiHead) {
+  const dx = food.x - aiHead.x;
+  const dy = food.y - aiHead.y;
 
-canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  if (x < canvas.width / 2 && direction !== "RIGHT") direction = "LEFT";
-  else if (x > canvas.width / 2 && direction !== "LEFT") direction = "RIGHT";
-  else if (y < canvas.height / 2 && direction !== "DOWN") direction = "UP";
-  else if (y > canvas.height / 2 && direction !== "UP") direction = "DOWN";
-});
-
-let startX, startY;
-canvas.addEventListener("touchstart", e => {
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
-}, { passive: false });
-
-canvas.addEventListener("touchmove", e => {
-  e.preventDefault();
-  const dx = e.touches[0].clientX - startX;
-  const dy = e.touches[0].clientY - startY;
+  let directions = [];
 
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
-    else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
+    directions.push({ x: Math.sign(dx), y: 0 });
+    directions.push({ x: 0, y: Math.sign(dy) });
   } else {
-    if (dy > 0 && direction !== "UP") direction = "DOWN";
-    else if (dy < 0 && direction !== "DOWN") direction = "UP";
+    directions.push({ x: 0, y: Math.sign(dy) });
+    directions.push({ x: Math.sign(dx), y: 0 });
   }
 
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
+  // Fallback directions
+  directions.push({ x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 });
+
+  for (let dir of directions) {
+    const newHead = { x: aiHead.x + dir.x, y: aiHead.y + dir.y };
+
+    const isInside = newHead.x >= 0 && newHead.x < tileCount && newHead.y >= 0 && newHead.y < tileCount;
+    const hitsSnake = snake.some(seg => seg.x === newHead.x && seg.y === newHead.y);
+    const hitsItself = aiSnake.some(seg => seg.x === newHead.x && seg.y === newHead.y);
+
+    if (isInside && !hitsSnake && !hitsItself) return dir;
+  }
+
+  return { x: 0, y: 0 }; // stuck fallback
+}
+
+// Keyboard controls
+window.addEventListener("keydown", (e) => {
+  switch (e.key) {
+    case "ArrowUp": if (velocity.y === 0) velocity = { x: 0, y: -1 }; break;
+    case "ArrowDown": if (velocity.y === 0) velocity = { x: 0, y: 1 }; break;
+    case "ArrowLeft": if (velocity.x === 0) velocity = { x: -1, y: 0 }; break;
+    case "ArrowRight": if (velocity.x === 0) velocity = { x: 1, y: 0 }; break;
+  }
+});
+
+// Swipe controls
+let startX, startY;
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  startX = touch.clientX;
+  startY = touch.clientY;
 }, { passive: false });
 
-function gameOver() {
-  clearInterval(game);
-  overlay.classList.remove("hidden");
-  finalScoreDisplay.textContent = `Final Score: ${score}`;
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem("snakeHighScore", score);
-    document.getElementById("high-score").textContent = `High Score: ${highScore}`;
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dx = touch.clientX - startX;
+  const dy = touch.clientY - startY;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0 && velocity.x === 0) velocity = { x: 1, y: 0 };
+    else if (dx < 0 && velocity.x === 0) velocity = { x: -1, y: 0 };
+  } else {
+    if (dy > 0 && velocity.y === 0) velocity = { x: 0, y: 1 };
+    else if (dy < 0 && velocity.y === 0) velocity = { x: 0, y: -1 };
   }
-}
+
+  startX = touch.clientX;
+  startY = touch.clientY;
+}, { passive: false });
+
+// Default launch
+resetGame();
+
