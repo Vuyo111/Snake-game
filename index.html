@@ -1,40 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snake Game with AI</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake Game</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="game-container">
+  <div id="game-container">
     <h1>Snake Game</h1>
+
+    <div id="mode-selector">
+      <button onclick="setMode('solo')">Solo Mode</button>
+      <button onclick="setMode('duel')">Duel Mode</button>
+    </div>
+
+    <button id="start-button" onclick="startGame()">Start Game</button>
+
     <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-    <div class="score-board">
-      <p>Score: <span id="score">0</span></p>
-      <p>Best: <span id="bestScore">0</span></p>
-      <p>Difficulty: <span id="difficulty">Easy</span></p>
-
-      <div class="buttons">
-        <button id="soloBtn">Solo Mode</button>
-        <button id="duelBtn">Duel Mode</button>
-      </div>
-    </div>
+    <div id="score-display">Score: 0</div>
+    <div id="high-score">High Score: 0</div>
   </div>
 
-  <div id="gameOverOverlay" class="overlay">
+  <div id="game-over-overlay" class="hidden">
     <div class="overlay-content">
       <h2>Game Over</h2>
-      <p>Your Score: <span id="finalScore"></span></p>
-      <button id="restartBtn">Restart</button>
+      <p id="final-score"></p>
+      <button onclick="restartGame()">Play Again</button>
     </div>
   </div>
 
-  <audio id="eatSound" src="audio/RPReplay_Final1753760137.mp3"></audio>
-  <audio id="gameOverSound" src="audio/RPReplay_Final1753760277.mp3"></audio>
-  <audio id="clickSound" src="audio/RPReplay_Final1753760308.mp3"></audio>
-
   <script src="script.js"></script>
+
+  <audio id="eatSound" src="audio/RPReplay_Final1753760137.mp3" preload="auto"></audio>
+  <audio id="gameOverSound" src="audio/RPReplay_Final1753760277.mp3" preload="auto"></audio>
+  <audio id="clickSound" src="audio/RPReplay_Final1753760308.mp3" preload="auto"></audio>
+  
 </body>
 </html>

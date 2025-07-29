@@ -1,205 +1,170 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const scoreDisplay = document.getElementById('score');
-const bestScoreDisplay = document.getElementById('bestScore');
-const difficultyDisplay = document.getElementById('difficulty');
-const soloBtn = document.getElementById('soloBtn');
-const duelBtn = document.getElementById('duelBtn');
-const restartBtn = document.getElementById('restartBtn');
-const overlay = document.getElementById('gameOverOverlay');
-const finalScoreDisplay = document.getElementById('finalScore');
-
-const eatSound = document.getElementById('eatSound');
-const gameOverSound = document.getElementById('gameOverSound');
-const clickSound = document.getElementById('clickSound');
-
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 const box = 20;
-let snake, aiSnake, direction, aiDirection, food, score, speed, gameMode, animationId;
-let bestScore = localStorage.getItem('bestScore') || 0;
-bestScoreDisplay.textContent = bestScore;
+let snake, food, aiSnake, score, direction, game, mode;
+let highScore = localStorage.getItem("snakeHighScore") || 0;
+let speed = 150;
 
-let lastTime = 0;
+document.getElementById("high-score").textContent = `High Score: ${highScore}`;
+const overlay = document.getElementById("game-over-overlay");
+const finalScoreDisplay = document.getElementById("final-score");
+const eatSound = document.getElementById("eatSound");
+const gameOverSound= document.getElementById("gameOverSound");
+const clickSound = document.getElementById("clickSound");
 
-// Touch controls
-let touchStartX = 0, touchStartY = 0;
+function setMode(selectedMode) {
+  mode = selectedMode;
+  document.getElementById("start-button").style.display = "inline-block";
+}
 
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-}, { passive: false });
-
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const dx = touch.clientX - touchStartX;
-  const dy = touch.clientY - touchStartY;
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0 && direction !== 'LEFT') direction = 'RIGHT';
-    else if (dx < 0 && direction !== 'RIGHT') direction = 'LEFT';
-  } else {
-    if (dy > 0 && direction !== 'UP') direction = 'DOWN';
-    else if (dy < 0 && direction !== 'DOWN') direction = 'UP';
-  }
-}, { passive: false });
-
-// Mouse click control
-canvas.addEventListener('click', e => {
-  const rect = canvas.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
-
-  if (clickX > clickY && clickX + clickY < canvas.width) direction = 'UP';
-  else if (clickX > clickY && clickX + clickY > canvas.width) direction = 'RIGHT';
-  else if (clickX < clickY && clickX + clickY > canvas.width) direction = 'DOWN';
-  else direction = 'LEFT';
-});
-
-soloBtn.addEventListener('click', () => { clickSound.play(); startGame('solo'); });
-duelBtn.addEventListener('click', () => { clickSound.play(); startGame('duel'); });
-restartBtn.addEventListener('click', () => { clickSound.play(); overlay.style.display = 'none'; startGame(gameMode); });
-
-document.addEventListener('keydown', setDirection);
-
-function startGame(mode) {
-  cancelAnimationFrame(animationId); // stop any old loop
-  gameMode = mode;
+function startGame() {
   snake = [{ x: 9 * box, y: 10 * box }];
-  aiSnake = [{ x: 10 * box, y: 9 * box }];
-  direction = null;
-  aiDirection = 'LEFT';
+  aiSnake = [{ x: 1 * box, y: 1 * box }];
+  food = spawnFood();
   score = 0;
+  direction = "RIGHT";
   speed = 150;
-  lastTime = 0;
-  scoreDisplay.textContent = score;
-  difficultyDisplay.textContent = 'Easy';
-  food = randomFood();
-  overlay.style.display = 'none';
-  animationId = requestAnimationFrame(gameLoop);
+  clearInterval(game);
+  game = setInterval(draw, speed);
+  overlay.classList.add("hidden");
 }
 
-function setDirection(e) {
-  if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-  else if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-  else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
-  else if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+function restartGame() {
+  overlay.classList.add("hidden");
+  startGame();
 }
 
-function randomFood() {
+function spawnFood() {
   return {
-    x: Math.floor(Math.random() * 20) * box,
-    y: Math.floor(Math.random() * 20) * box
+    x: Math.floor(Math.random() * 19 + 1) * box,
+    y: Math.floor(Math.random() * 19 + 1) * box
   };
 }
 
-function gameLoop(timestamp) {
-  if (!lastTime) lastTime = timestamp;
-  const deltaTime = timestamp - lastTime;
-
-  if (deltaTime > speed) {
-    update();
-    lastTime = timestamp;
-  }
-
-  draw();
-  animationId = requestAnimationFrame(gameLoop);
-}
-
-function update() {
-  if (score >= 10) { speed = 90; difficultyDisplay.textContent = 'Hard'; }
-  else if (score >= 5) { speed = 120; difficultyDisplay.textContent = 'Medium'; }
-
-  let snakeX = snake[0].x;
-  let snakeY = snake[0].y;
-
-  if (direction === 'LEFT') snakeX -= box;
-  if (direction === 'UP') snakeY -= box;
-  if (direction === 'RIGHT') snakeX += box;
-  if (direction === 'DOWN') snakeY += box;
-
-  if (snakeX === food.x && snakeY === food.y) {
-    score++;
-    scoreDisplay.textContent = score;
-    eatSound.play();
-    if (score > bestScore) {
-      bestScore = score;
-      localStorage.setItem('bestScore', bestScore);
-      bestScoreDisplay.textContent = bestScore;
-    }
-    food = randomFood();
-  } else {
-    snake.pop();
-  }
-
-  let newHead = { x: snakeX, y: snakeY };
-
-  if (checkCollision(newHead, snake) || checkCollision(newHead, aiSnake) ||
-      snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height) {
-    gameOver();
-    return;
-  }
-
-  snake.unshift(newHead);
-
-  if (gameMode === 'duel') smartAIMove();
+function drawBox(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, box, box);
+  ctx.strokeStyle = "#fff";
+  ctx.strokeRect(x, y, box, box);
 }
 
 function draw() {
-  ctx.fillStyle = '#081c15';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = '#d8f3dc';
-  ctx.fillRect(food.x, food.y, box, box);
+  snake.forEach(part => drawBox(part.x, part.y, "#6bbe92"));
+  if (mode === "duel") aiSnake.forEach(part => drawBox(part.x, part.y, "#e46464"));
+  drawBox(food.x, food.y, "#ffd700");
 
-  snake.forEach((segment, index) => {
-    ctx.fillStyle = index === 0 ? '#95d5b2' : '#52b788';
-    ctx.fillRect(segment.x, segment.y, box, box);
-    ctx.strokeStyle = '#1b4332';
-    ctx.strokeRect(segment.x, segment.y, box, box);
-  });
+  moveSnake(snake);
+  if (mode === "duel") moveAI();
 
-  if (gameMode === 'duel') {
-    aiSnake.forEach((segment, index) => {
-      ctx.fillStyle = index === 0 ? '#ffb703' : '#f4a261';
-      ctx.fillRect(segment.x, segment.y, box, box);
-      ctx.strokeStyle = '#1b4332';
-      ctx.strokeRect(segment.x, segment.y, box, box);
-    });
-  }
+  document.getElementById("score-display").textContent = `Score: ${score}`;
+
+  speed = 150 - Math.min(score * 5, 100);
+  clearInterval(game);
+  game = setInterval(draw, speed);
 }
 
-function smartAIMove() {
-  let aiX = aiSnake[0].x;
-  let aiY = aiSnake[0].y;
+function moveSnake(s) {
+  let head = { ...s[0] };
+  if (direction === "LEFT") head.x -= box;
+  if (direction === "UP") head.y -= box;
+  if (direction === "RIGHT") head.x += box;
+  if (direction === "DOWN") head.y += box;
 
-  if (aiX < food.x) aiDirection = 'RIGHT';
-  else if (aiX > food.x) aiDirection = 'LEFT';
-  else if (aiY < food.y) aiDirection = 'DOWN';
-  else if (aiY > food.y) aiDirection = 'UP';
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    food = spawnFood();
+  } else {
+    s.pop();
+  }
 
-  if (aiDirection === 'LEFT') aiX -= box;
-  if (aiDirection === 'UP') aiY -= box;
-  if (aiDirection === 'RIGHT') aiX += box;
-  if (aiDirection === 'DOWN') aiY += box;
+  if (
+    head.x < 0 || head.x >= canvas.width ||
+    head.y < 0 || head.y >= canvas.height ||
+    collision(head, s) ||
+    (mode === "duel" && collision(head, aiSnake))
+  ) return gameOver();
 
-  if (aiX === food.x && aiY === food.y) {
-    aiSnake.unshift({ x: aiX, y: aiY });
-    food = randomFood();
+  s.unshift(head);
+}
+
+function moveAI() {
+  let head = { ...aiSnake[0] };
+
+  if (food.x > head.x) head.x += box;
+  else if (food.x < head.x) head.x -= box;
+  else if (food.y > head.y) head.y += box;
+  else if (food.y < head.y) head.y -= box;
+
+  if (head.x === food.x && head.y === food.y) {
+    food = spawnFood();
   } else {
     aiSnake.pop();
-    aiSnake.unshift({ x: aiX, y: aiY });
   }
+
+  if (
+    head.x < 0 || head.x >= canvas.width ||
+    head.y < 0 || head.y >= canvas.height ||
+    collision(head, aiSnake) ||
+    collision(head, snake)
+  ) return; // AI dies silently
+
+  aiSnake.unshift(head);
 }
 
-function checkCollision(head, array) {
-  return array.some(segment => segment.x === head.x && segment.y === head.y);
+function collision(head, array) {
+  return array.some(part => part.x === head.x && part.y === head.y);
 }
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+  else if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+  else if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+  else if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+});
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  if (x < canvas.width / 2 && direction !== "RIGHT") direction = "LEFT";
+  else if (x > canvas.width / 2 && direction !== "LEFT") direction = "RIGHT";
+  else if (y < canvas.height / 2 && direction !== "DOWN") direction = "UP";
+  else if (y > canvas.height / 2 && direction !== "UP") direction = "DOWN";
+});
+
+let startX, startY;
+canvas.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+}, { passive: false });
+
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+  const dx = e.touches[0].clientX - startX;
+  const dy = e.touches[0].clientY - startY;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
+    else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
+  } else {
+    if (dy > 0 && direction !== "UP") direction = "DOWN";
+    else if (dy < 0 && direction !== "DOWN") direction = "UP";
+  }
+
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+}, { passive: false });
 
 function gameOver() {
-  cancelAnimationFrame(animationId);
-  gameOverSound.play();
-  finalScoreDisplay.textContent = score;
-  overlay.style.display = 'flex';
+  clearInterval(game);
+  overlay.classList.remove("hidden");
+  finalScoreDisplay.textContent = `Final Score: ${score}`;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem("snakeHighScore", score);
+    document.getElementById("high-score").textContent = `High Score: ${highScore}`;
+  }
 }
