@@ -23,8 +23,6 @@ let score = 0;
 let gameInterval;
 let gameMode = "solo";
 
-// 🟢 Movement
-document.addEventListener("keydown", handleKeyPress);
 
 function handleKeyPress(e) {
   clickSound.play();
@@ -42,37 +40,39 @@ function handleKeyPress(e) {
     else if (key === "d" && direction2 !== "LEFT") direction2 = "RIGHT";
   }
 }
+document.addEventListener("keydown", handleKeyPress);
 
 // 🟩 Game start/reset logic
 function startGame() {
-  snake = [{ x: 9 * box, y: 10 * box }];
-  snake2 = [{ x: 11 * box, y: 10 * box }];
   direction = "RIGHT";
   direction2 = "LEFT";
   score = 0;
+  snake = [{ x: 8 * box, y: 10 * box }];
+  snake2 = [{ x: 12 * box, y: 10 * box }];
   generateFood();
   clearInterval(gameInterval);
-  gameInterval = setInterval(draw, 100);
   gameOverScreen.classList.add("hidden");
+  gameInterval = setInterval(draw, 100);
+  
 }
 
 function generateFood() {
   food = {
-    x: Math.floor(Math.random() * 19 + 1) * box,
-    y: Math.floor(Math.random() * 19 + 1) * box,
+    x: Math.floor(Math.random() * 18 + 1) * box,
+    y: Math.floor(Math.random() * 18 + 1) * box,
   };
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw food
   ctx.fillStyle = "red";
   ctx.fillRect(food.x, food.y, box, box);
 
-  // Move snakes
   moveSnake(snake, direction);
-  if (gameMode === "duel") moveSnake(snake2, direction2, true);
+  if (gameMode === "duel") {
+     moveSnake(snake2, direction2, true);
+  } 
 
   // Draw snakes
   drawSnake(snake, "#5ba57b");
@@ -93,6 +93,16 @@ function moveSnake(snakeArr, dir, isSecond = false) {
   else if (dir === "UP") head.y -= box;
   else if (dir === "DOWN") head.y += box;
 
+  if (
+    head.x < 0 || head.x >= canvas.width ||
+    head.y < 0 || head.y >= canvas.height ||
+    collision(head, snakeArr) ||
+    (!isSecond && gameMode === "duel" && collision(head, snake2)) ||
+    (isSecond && collision(head, snake))
+  ) {
+    return gameOver();
+  }
+
   if (head.x === food.x && head.y === food.y) {
     eatSound.play();
     score++;
@@ -101,20 +111,11 @@ function moveSnake(snakeArr, dir, isSecond = false) {
     snakeArr.pop();
   }
 
-  if (
-    head.x < 0 || head.x >= canvas.width ||
-    head.y < 0 || head.y >= canvas.height ||
-    collision(head, snake) ||
-    (isSecond ? collision(head, snake) : collision(head, snake2))
-  ) {
-    gameOver();
-    return;
-  }
-
   snakeArr.unshift(head);
+
 }
 
-function collision(head, array) {
+function collision(head, array){
   return array.some(segment => segment.x === head.x && segment.y === head.y);
 }
 
@@ -146,11 +147,17 @@ canvas.addEventListener("touchmove", e => {
 }, { passive: false });
 
 // 🔘 Button Event Listeners
-startBtn.addEventListener("click", startGame);
-restartBtn.addEventListener("click", startGame);
-soloBtn.addEventListener("click", () => {
-  gameMode = "solo";
+startBtn.addEventListener("click", () => {
   clickSound.play();
+  startGame();
+});
+restartBtn.addEventListener("click", () => {
+  clickSound.play();
+  startGame();
+});
+soloBtn.addEventListener("click", () => {
+  clickSound.play();
+  gameMode = "solo";
 });
 duelBtn.addEventListener("click", () => {
   gameMode = "duel";
