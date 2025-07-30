@@ -23,6 +23,7 @@ let score = 0;
 let gameInterval;
 let gameMode = "solo";
 let gameStarted = false;
+let modeSelected = false;
 
 
 function handleKeyPress(e) {
@@ -44,7 +45,7 @@ function handleKeyPress(e) {
 document.addEventListener("keydown", handleKeyPress);
 
 window.addEventListener("keydown", () => {
-  if (!gameStarted){
+  if (!gameStarted && modeSelected){
     gameStarted = true;
     document.getElementById("startOverlay").classList.add("hidden")
     startGame();
@@ -168,8 +169,10 @@ restartBtn.addEventListener("click", () => {
 soloBtn.addEventListener("click", () => {
   clickSound.play();
   gameMode = "solo";
+  modeSelected = true;
 });
 duelBtn.addEventListener("click", () => {
   gameMode = "duel";
   clickSound.play();
+  modeSelected = true;
 });
