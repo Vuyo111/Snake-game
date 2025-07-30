@@ -22,6 +22,7 @@ let food = {};
 let score = 0;
 let gameInterval;
 let gameMode = "solo";
+let gameStarted = false;
 
 
 function handleKeyPress(e) {
@@ -41,6 +42,15 @@ function handleKeyPress(e) {
   }
 }
 document.addEventListener("keydown", handleKeyPress);
+
+window.addEventListener("keydown", () => {
+  if (!gameStarted){
+    gameStarted = true;
+    document.getElementById("startOverlay").classList.add("hidden")
+    startGame();
+  }
+});
+
 
 // 🟩 Game start/reset logic
 function startGame() {
