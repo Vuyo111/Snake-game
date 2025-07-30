@@ -47,7 +47,6 @@ document.addEventListener("keydown", handleKeyPress);
 window.addEventListener("keydown", () => {
   if (!gameStarted && modeSelected){
     gameStarted = true;
-    document.getElementById("startOverlay").classList.add("hidden")
     startGame();
   }
 });
