@@ -141,6 +141,15 @@ canvas.addEventListener("touchmove", e => {
   touchStartY = e.touches[0].clientY;
 }, { passive: false });
 
+
 // Buttons
-startBtn.addEventListener("click", () => clickSound.play() || startGame());
-restartBtn.addEventListener("click", () => clickSound.play() || startGame());
+startBtn.addEventListener("click", () => {
+  clickSound.play();
+  startGame();
+});
+
+restartBtn.addEventListener("click", () => {
+  clickSound.play();
+  startGame();
+});
+
