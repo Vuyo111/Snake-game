@@ -64,10 +64,14 @@ function generateFood() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Draw food
   ctx.fillStyle = "#ff5555";
   ctx.fillRect(food.x, food.y, box, box);
 
+  // Move snake
   moveSnake();
+
+  // Draw snake
   drawSnake();
 }
 
@@ -85,22 +89,21 @@ function moveSnake() {
   if (direction === "UP") head.y -= box;
   if (direction === "DOWN") head.y += box;
 
-  if (
-    head.x < 0 || head.x >= canvas.width ||
-    head.y < 0 || head.y >= canvas.height ||
-    collision(head, snake)
-  ) {
+  if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || collision(head, snake)) {
     return endGame();
   }
 
   if (head.x === food.x && head.y === food.y) {
     eatSound.play();
     score++;
+
+    // Increase speed slightly
     if (speed > 60) {
       clearInterval(gameInterval);
       speed -= 3;
       gameInterval = setInterval(draw, speed);
     }
+
     generateFood();
   } else {
     snake.pop();
@@ -141,7 +144,6 @@ canvas.addEventListener("touchmove", e => {
   touchStartY = e.touches[0].clientY;
 }, { passive: false });
 
-
 // Buttons
 startBtn.addEventListener("click", () => {
   clickSound.play();
@@ -152,4 +154,3 @@ restartBtn.addEventListener("click", () => {
   clickSound.play();
   startGame();
 });
-
