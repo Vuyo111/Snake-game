@@ -1,32 +1,32 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Snake Duel</title>
-    <link rel="stylesheet" href="style.css"/>
-  </head>
-  <body>
-    <h1>Snake Duel</h1>
-    <div id="controls">
-    <button id="soloBtn">Solo</button>
-    <button id="duelBtn">Duel</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Snake Duel</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <h1>🐍 Snake Duel</h1>
+
+  <div id="controls">
+    <button id="soloBtn">Solo Mode</button>
+    <button id="duelBtn">Duel Mode</button>
     <button id="startBtn">Start</button>
-    </div>
+  </div>
 
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-    <div id="gameOverScreen" class="hidden">
-      <h2>Game Over</h2>
-      <p>Your Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Restart</button>
-    </div>
+  <div id="gameOverScreen" class="hidden">
+    <h2>Game Over</h2>
+    <p>Your Score: <span id="finalScore">0</span></p>
+    <button id="restartBtn">Restart</button>
+  </div>
 
-    <audio id="eatSound" src="audio/RPReplay_Final1753760137.mp3" preload="auto"></audio>
-    <audio id="gameOverSound" src="audio/RPReplay_Final1753760277.mp3" preload="auto"></audio>
-    <audio id="clickSound" src="audio/RPReplay_Final1753760308.mp3" preload="auto"></audio>
+  <audio id="eatSound" src="audio/RPReplay_Final1753760137.mp3" preload="auto"></audio>
+  <audio id="gameOverSound" src="audio/RPReplay_Final1753760277.mp3" preload="auto"></audio>
+  <audio id="clickSound" src="audio/RPReplay_Final1753760308.mp3" preload="auto"></audio>
 
-    <script src="script.js"></script>
-
-  </body>
+  <script src="script.js"></script>
+</body>
 </html>

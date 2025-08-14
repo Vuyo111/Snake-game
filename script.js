@@ -1,14 +1,17 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Buttons
 const soloBtn = document.getElementById("soloBtn");
 const duelBtn = document.getElementById("duelBtn");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 
+// UI
 const gameOverScreen = document.getElementById("gameOverScreen");
 const finalScore = document.getElementById("finalScore");
 
+// Sounds
 const eatSound = document.getElementById("eatSound");
 const gameOverSound = document.getElementById("gameOverSound");
 const clickSound = document.getElementById("clickSound");
@@ -20,21 +23,23 @@ let direction = "RIGHT";
 let direction2 = "LEFT";
 let food = {};
 let score = 0;
+let speed = 120;
 let gameInterval;
 let gameMode = "solo";
 let gameStarted = false;
 let modeSelected = false;
 
+document.addEventListener("keydown", handleKeyPress);
 
 function handleKeyPress(e) {
   clickSound.play();
-  const key = e.key;
-  if (key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-  else if (key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-  else if (key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-  else if (key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+  const key = e.key.toLowerCase();
 
-  // Controls for second snake (duel mode)
+  if (key === "arrowup" && direction !== "DOWN") direction = "UP";
+  else if (key === "arrowdown" && direction !== "UP") direction = "DOWN";
+  else if (key === "arrowleft" && direction !== "RIGHT") direction = "LEFT";
+  else if (key === "arrowright" && direction !== "LEFT") direction = "RIGHT";
+
   if (gameMode === "duel") {
     if (key === "w" && direction2 !== "DOWN") direction2 = "UP";
     else if (key === "s" && direction2 !== "UP") direction2 = "DOWN";
@@ -42,101 +47,102 @@ function handleKeyPress(e) {
     else if (key === "d" && direction2 !== "LEFT") direction2 = "RIGHT";
   }
 }
-document.addEventListener("keydown", handleKeyPress);
 
-window.addEventListener("keydown", () => {
-  if (!gameStarted && modeSelected){
-    gameStarted = true;
-    startGame();
-  }
-});
-
-
-// 🟩 Game start/reset logic
 function startGame() {
   direction = "RIGHT";
   direction2 = "LEFT";
   score = 0;
+  speed = 120;
   snake = [{ x: 8 * box, y: 10 * box }];
   snake2 = [{ x: 12 * box, y: 10 * box }];
   generateFood();
   clearInterval(gameInterval);
   gameOverScreen.classList.add("hidden");
-  gameInterval = setInterval(draw, 100);
-  
+  gameInterval = setInterval(draw, speed);
+  gameStarted = true;
 }
 
 function generateFood() {
-  food = {
-    x: Math.floor(Math.random() * 18 + 1) * box,
-    y: Math.floor(Math.random() * 18 + 1) * box,
-  };
+  let validPosition = false;
+  while (!validPosition) {
+    food = {
+      x: Math.floor(Math.random() * (canvas.width / box)) * box,
+      y: Math.floor(Math.random() * (canvas.height / box)) * box
+    };
+    if (
+      !snake.some(seg => seg.x === food.x && seg.y === food.y) &&
+      !snake2.some(seg => seg.x === food.x && seg.y === food.y)
+    ) {
+      validPosition = true;
+    }
+  }
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "red";
+  ctx.fillStyle = "#ff5555";
   ctx.fillRect(food.x, food.y, box, box);
 
   moveSnake(snake, direction);
-  if (gameMode === "duel") {
-     moveSnake(snake2, direction2, true);
-  } 
+  if (gameMode === "duel") moveSnake(snake2, direction2, true);
 
-  // Draw snakes
-  drawSnake(snake, "#5ba57b");
-  if (gameMode === "duel") drawSnake(snake2, "#b44a4a");
+  drawSnake(snake, "#4caf84");
+  if (gameMode === "duel") drawSnake(snake2, "#e57373");
 }
 
-function drawSnake(snakeArr, color) {
-  for (let i = 0; i < snakeArr.length; i++) {
-    ctx.fillStyle = i === 0 ? "white" : color;
-    ctx.fillRect(snakeArr[i].x, snakeArr[i].y, box, box);
-  }
+function drawSnake(arr, color) {
+  arr.forEach((seg, i) => {
+    ctx.fillStyle = i === 0 ? "#fff" : color;
+    ctx.fillRect(seg.x, seg.y, box, box);
+  });
 }
 
-function moveSnake(snakeArr, dir, isSecond = false) {
-  let head = { ...snakeArr[0] };
+function moveSnake(arr, dir, isSecond = false) {
+  let head = { ...arr[0] };
   if (dir === "LEFT") head.x -= box;
-  else if (dir === "RIGHT") head.x += box;
-  else if (dir === "UP") head.y -= box;
-  else if (dir === "DOWN") head.y += box;
+  if (dir === "RIGHT") head.x += box;
+  if (dir === "UP") head.y -= box;
+  if (dir === "DOWN") head.y += box;
 
   if (
     head.x < 0 || head.x >= canvas.width ||
     head.y < 0 || head.y >= canvas.height ||
-    collision(head, snakeArr) ||
+    collision(head, arr) ||
     (!isSecond && gameMode === "duel" && collision(head, snake2)) ||
     (isSecond && collision(head, snake))
   ) {
-    return gameOver();
+    return endGame();
   }
 
   if (head.x === food.x && head.y === food.y) {
     eatSound.play();
     score++;
+    if (speed > 60) {
+      clearInterval(gameInterval);
+      speed -= 3;
+      gameInterval = setInterval(draw, speed);
+    }
     generateFood();
   } else {
-    snakeArr.pop();
+    arr.pop();
   }
-
-  snakeArr.unshift(head);
-
+  arr.unshift(head);
 }
 
-function collision(head, array){
-  return array.some(segment => segment.x === head.x && segment.y === head.y);
+function collision(head, arr) {
+  return arr.some(seg => seg.x === head.x && seg.y === head.y);
 }
 
-function gameOver() {
+function endGame() {
   gameOverSound.play();
   clearInterval(gameInterval);
   finalScore.textContent = score;
   gameOverScreen.classList.remove("hidden");
+  gameStarted = false;
 }
 
-// 🧠 Mobile swipe support
+// Touch controls for Player 1
 let touchStartX, touchStartY;
 canvas.addEventListener("touchstart", e => {
   touchStartX = e.touches[0].clientX;
@@ -156,22 +162,18 @@ canvas.addEventListener("touchmove", e => {
   touchStartY = e.touches[0].clientY;
 }, { passive: false });
 
-// 🔘 Button Event Listeners
-startBtn.addEventListener("click", () => {
-  clickSound.play();
-  startGame();
-});
-restartBtn.addEventListener("click", () => {
-  clickSound.play();
-  startGame();
-});
+// Buttons
 soloBtn.addEventListener("click", () => {
   clickSound.play();
   gameMode = "solo";
   modeSelected = true;
 });
 duelBtn.addEventListener("click", () => {
-  gameMode = "duel";
   clickSound.play();
+  gameMode = "duel";
   modeSelected = true;
 });
+startBtn.addEventListener("click", () => {
+  if (modeSelected) startGame();
+});
+restartBtn.addEventListener("click", startGame);
