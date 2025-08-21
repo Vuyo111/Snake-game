@@ -1,51 +1,66 @@
-Snake Game with Adaptive AI & Duel Mode
+# Snake Game
 
-Overview
+A classic, browser-based Snake game built with JavaScript, HTML, and CSS.
 
-This is a modern, responsive Snake game built with HTML, CSS, and JavaScript, featuring:
+##  Live Demo
 
-Classic Snake gameplay with smooth animations and adaptive difficulty.
-Duel Mode: play against an AI opponent that competes for food.
-Adaptive AI: smarter opponent that avoids walls and grows as it eats.
-Mobile-friendly: supports swipe controls for touch devices.
-Responsive design: scales perfectly across screen sizes.
-Sound effects for eating, game over, and button clicks.
-Leaderboard: tracks your best score locally using localStorage.
-Demo
+Try the game here:  
+**https://vuyo111.github.io/Snake-game/**
 
-Try the game live here: https://vuyo111.github.io/Snake-game/
+##  Overview
 
-Features
+Play the timeless Snake game where you control a continuously growing snake. Your goal? Navigate the playing field, eat food to grow longer, and avoid running into the walls or yourself. Simple in concept, endlessly addictive in practice!
 
-Dynamic speed increases as score grows to ramp up difficulty.
-Two gameplay modes: Solo and Duel.
-AI opponent with basic pathfinding and collision avoidance.
-Intuitive mobile controls with swipe gestures.
-Clean, modern UI with forest-inspired color scheme.
-High score persistence across sessions.
-Simple UI for mode selection and game restart.
-Installation & Usage
+##  Features
 
-Clone the repository or download the ZIP.
-Open index.html in any modern browser.
-Select game mode and start playing!
-Use arrow keys or swipe gestures to control the snake.
-Try to beat your best score!
-Technologies Used
+- One game mode: **Classic Snake**
+- Movement via **Arrow Keys** 
+- **Score display** updates in real time
+- **Game Over** when the snake collides with itself or the boundary
+- Optionally:
+  - Toggle borders on
+  - Adjustable speed levels 
 
-HTML5 Canvas API
-Vanilla JavaScript (ES6+)
-CSS3 (Flexbox, animations)
-LocalStorage for persistent high score
-Audio API for sound effects
-Future Improvements
+##  How to Play
 
-Add more AI difficulty levels with advanced pathfinding.
-Include leaderboards synced across users.
-Add customization options (skins, colors).
-Implement sound/music toggles.
-Add more mobile-friendly UI polish.
+1. Open the game in your browser.
+2. Use **Arrow Keys (← ↑ → ↓)** to direct the snake.
+3. Eat the food that appears to increase your score and length.
+4. Keep going—don’t run into the walls or your own tail.
+5. Game ends upon collision—then try again to beat your score!
+
+##  Installation (Optional – for local play or development)
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/vuyo111/Snake-game.git
+   
+   2. Navigate to the project folder:
+cd Snake-game
+
+Open index.html in your browser:
+Double-click the file, or
+Run a local server (e.g., python -m http.server), then visit http://localhost:8000
+
+Technologies
+HTML: Structure of the interface (canvas, score, messages)
+CSS: Styling for game visuals and layout
+JavaScript: Game loop, controls, logic, collision detection, scoring
+
+Customization Ideas
+Want to enhance the game? Consider adding:
+Speed selection before starting
+Border toggle to switch between wall and no-wall modes
+Pause / Resume functionality (e.g., press P or ESC)
+High score tracking using browser 
+
+localStorage
+Mobile support with touch controls or on-screen buttons
+
+Troubleshooting
+Game won’t load or the canvas is blank: Ensure your browser supports HTML5.
+Controls not working: Click on the window or canvas to focus before using arrow keys.
+Score doesn’t increment: Check the console for JavaScript errors (F12 to open developer tools).
+
 License
-
-MIT License © Ondela
-
+This project is open-source and available under the MIT License. Feel free to fork, modify, and share!
